@@ -1,0 +1,21 @@
+<mat-toolbar color="primary" class="header elevation-2">
+    <div class="container">
+        <a routerLink="/" class="logo-container">
+            <div class="logo-icon">
+                <mat-icon>directions_car</mat-icon>
+            </div>
+            <span class="logo-text">{{ title }}</span>
+        </a>
+        <div class="spacer"></div>
+        <nav>
+            <a mat-button routerLink="/vehicles" routerLinkActive="active" class="nav-link">
+                <mat-icon>commute</mat-icon>
+                <span>Vehicles</span>
+            </a>
+            <a mat-button routerLink="/groups" routerLinkActive="active" class="nav-link">
+                <mat-icon>category</mat-icon>
+                <span>Groups</span>
+            </a>
+        </nav>
+    </div>
+</mat-toolbar>

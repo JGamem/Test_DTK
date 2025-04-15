@@ -1,0 +1,31 @@
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 48px;
+    width: 100%;
+}
+
+.loading-spinner {
+    margin-bottom: 16px;
+}
+
+.loading-text {
+    margin: 0;
+    color: #757575;
+    font-size: 14px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}

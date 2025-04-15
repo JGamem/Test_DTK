@@ -1,0 +1,29 @@
+@use '@angular/material' as mat;
+@use '../abstracts/variables' as vars;
+
+$primary-palette: mat.define-palette(mat.$indigo-palette, 700, 300, 900);
+$accent-palette: mat.define-palette(mat.$pink-palette, 500, 100, 900);
+$warn-palette: mat.define-palette(mat.$red-palette);
+
+$theme: mat.define-light-theme((color: (primary: $primary-palette,
+                accent: $accent-palette,
+                warn: $warn-palette,
+            ),
+            typography: mat.define-typography-config($font-family: vars.$font-family-base,
+                $headline-1: mat.define-typography-level(2rem, 1.2, 500),
+                $headline-2: mat.define-typography-level(1.75rem, 1.2, 500),
+                $headline-3: mat.define-typography-level(1.5rem, 1.2, 500),
+                $headline-4: mat.define-typography-level(1.25rem, 1.2, 500),
+                $headline-5: mat.define-typography-level(1.125rem, 1.2, 500),
+                $headline-6: mat.define-typography-level(1rem, 1.2, 500),
+                $body-1: mat.define-typography-level(1rem, 1.5, 400),
+                $body-2: mat.define-typography-level(0.875rem, 1.5, 400),
+                $subtitle-1: mat.define-typography-level(1rem, 1.5, 500),
+                $subtitle-2: mat.define-typography-level(0.875rem, 1.5, 500),
+                $caption: mat.define-typography-level(0.75rem, 1.35, 400),
+                $button: mat.define-typography-level(0.875rem, 1, 500),
+            ),
+            density: 0,
+        ));
+
+@include mat.all-component-themes($theme);

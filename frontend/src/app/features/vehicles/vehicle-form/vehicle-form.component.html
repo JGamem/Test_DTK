@@ -1,0 +1,89 @@
+<div class="page-container">
+    <div class="page-header">
+        <div class="container">
+            <div class="header-content">
+                <h1>{{ isEditMode ? 'Edit' : 'Add New' }} Vehicle</h1>
+                <button mat-stroked-button routerLink="/vehicles" class="back-button">
+                    <mat-icon>arrow_back</mat-icon> Back to Vehicles
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="loading-container" *ngIf="isLoading">
+            <mat-spinner [diameter]="40"></mat-spinner>
+        </div>
+        <form [formGroup]="vehicleForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="form-container">
+            <mat-card class="form-card">
+                <mat-card-content>
+                    <div class="form-section">
+                        <h2 class="section-title">Vehicle Information</h2>
+
+                        <div class="form-row">
+                            <mat-form-field appearance="outline">
+                                <mat-label>Brand</mat-label>
+                                <input matInput formControlName="brand" placeholder="Enter brand" required>
+                                <mat-icon matPrefix>directions_car</mat-icon>
+                                <mat-error *ngIf="vehicleForm.get('brand')?.hasError('required')">
+                                    Brand is required
+                                </mat-error>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline">
+                                <mat-label>Model</mat-label>
+                                <input matInput formControlName="model" placeholder="Enter model" required>
+                                <mat-icon matPrefix>commute</mat-icon>
+                                <mat-error *ngIf="vehicleForm.get('model')?.hasError('required')">
+                                    Model is required
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+
+                        <div class="form-row">
+                            <mat-form-field appearance="outline">
+                                <mat-label>Year</mat-label>
+                                <input matInput formControlName="year" type="number" required>
+                                <mat-icon matPrefix>date_range</mat-icon>
+                                <mat-error *ngIf="vehicleForm.get('year')?.hasError('required')">
+                                    Year is required
+                                </mat-error>
+                                <mat-error *ngIf="vehicleForm.get('year')?.hasError('min')">
+                                    Year must be at least 1900
+                                </mat-error>
+                                <mat-error *ngIf="vehicleForm.get('year')?.hasError('max')">
+                                    Year cannot be more than {{ currentYear + 1 }}
+                                </mat-error>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline">
+                                <mat-label>Color</mat-label>
+                                <input matInput formControlName="color" placeholder="Enter color" required>
+                                <mat-icon matPrefix>palette</mat-icon>
+                                <mat-error *ngIf="vehicleForm.get('color')?.hasError('required')">
+                                    Color is required
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+
+                        <mat-form-field appearance="outline">
+                            <mat-label>Location</mat-label>
+                            <input matInput formControlName="location" placeholder="Enter location (optional)">
+                            <mat-icon matPrefix>location_on</mat-icon>
+                        </mat-form-field>
+                    </div>
+                </mat-card-content>
+
+                <mat-card-actions align="end" class="form-actions">
+                    <button mat-stroked-button type="button" (click)="onCancel()">
+                        Cancel
+                    </button>
+                    <button mat-raised-button color="primary" type="submit" [disabled]="vehicleForm.invalid">
+                        <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+                        {{ isEditMode ? 'Update Vehicle' : 'Add Vehicle' }}
+                    </button>
+                </mat-card-actions>
+            </mat-card>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,105 @@
+<div class="page-container">
+    <div class="page-header">
+        <div class="container">
+            <div class="header-content">
+                <h1>Group Details</h1>
+                <button mat-stroked-button routerLink="/groups" class="back-button">
+                    <mat-icon>arrow_back</mat-icon> Back to Groups
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <div class="loading-container" *ngIf="isLoading">
+            <mat-spinner [diameter]="40"></mat-spinner>
+        </div>
+
+        <div *ngIf="group && !isLoading" class="group-content">
+            <mat-card class="group-info-card">
+                <div class="group-info-header">
+                    <mat-icon class="group-icon">category</mat-icon>
+                    <div>
+                        <h2 class="group-name">{{ group.name }}</h2>
+                        <p class="group-meta">Created on {{ formatDate(group.createdAt) }}</p>
+                    </div>
+                </div>
+                <mat-card-content>
+                    <p *ngIf="group.description" class="group-description">{{ group.description }}</p>
+                    <p *ngIf="!group.description" class="no-description">No description available.</p>
+                </mat-card-content>
+            </mat-card>
+
+            <div class="drag-drop-container">
+                <h2 class="section-title">Manage Vehicles</h2>
+                <p class="section-description">Drag and drop vehicles between lists to organize them.</p>
+
+                <div class="drop-containers">
+                    <div class="drop-section">
+                        <div class="drop-header">
+                            <h3>Available Vehicles</h3>
+                            <span class="badge">{{ availableVehicles.length }}</span>
+                        </div>
+
+                        <div cdkDropList #availableList="cdkDropList" [cdkDropListData]="availableVehicles || []"
+                            [cdkDropListConnectedTo]="[groupList]" class="drop-list" id="available-vehicles"
+                            (cdkDropListDropped)="onDrop($event)">
+                            <div class="empty-list" *ngIf="availableVehicles.length === 0">
+                                <mat-icon>directions_car_off</mat-icon>
+                                <p>No available vehicles</p>
+                            </div>
+
+                            <div class="vehicle-item" *ngFor="let vehicle of availableVehicles" cdkDrag>
+                                <div class="drag-handle" cdkDragHandle>
+                                    <mat-icon>drag_indicator</mat-icon>
+                                </div>
+                                <div class="color-indicator" [style.background-color]="vehicle.color"></div>
+                                <div class="vehicle-details">
+                                    <div class="vehicle-brand">{{ vehicle.brand }} {{ vehicle.model }}</div>
+                                    <div class="vehicle-meta">{{ vehicle.year }} • {{ vehicle.color }}</div>
+                                </div>
+                                <button mat-icon-button color="primary" (click)="quickAddToGroup(vehicle)"
+                                    matTooltip="Add to group">
+                                    <mat-icon>add_circle</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="drop-section">
+                        <div class="drop-header">
+                            <h3>Group Vehicles</h3>
+                            <span class="badge highlight">{{ group.vehicles?.length || 0 }}</span>
+                        </div>
+
+                        <div cdkDropList #groupList="cdkDropList" [cdkDropListData]="group.vehicles || []"
+                            [cdkDropListConnectedTo]="[availableList]" class="drop-list" id="group-vehicles"
+                            (cdkDropListDropped)="onDrop($event)">
+                            <div class="empty-list" *ngIf="!group.vehicles || group.vehicles.length === 0">
+                                <mat-icon>directions_car</mat-icon>
+                                <p>No vehicles in this group</p>
+                                <span class="empty-hint">Drag vehicles here or use the + button</span>
+                            </div>
+
+                            <div class="vehicle-item" *ngFor="let vehicle of group.vehicles" cdkDrag>
+                                <div class="drag-handle" cdkDragHandle>
+                                    <mat-icon>drag_indicator</mat-icon>
+                                </div>
+                                <div class="color-indicator" [style.background-color]="vehicle.color"></div>
+                                <div class="vehicle-details">
+                                    <div class="vehicle-brand">{{ vehicle.brand }} {{ vehicle.model }}</div>
+                                    <div class="vehicle-meta">{{ vehicle.year }} • {{ vehicle.color }}</div>
+                                </div>
+                                <button mat-icon-button color="warn" (click)="quickRemoveFromGroup(vehicle)"
+                                    matTooltip="Remove from group">
+                                    <mat-icon>remove_circle</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
