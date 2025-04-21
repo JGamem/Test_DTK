@@ -35,27 +35,27 @@ export class LoginComponent implements OnInit {
     }
 
     onSubmit(): void {
-        if (this.loginForm.invalid) {
-            return;
-        }
-
-        this.loading = true;
-        this.error = '';
-
-        const { username, password } = this.loginForm.value;
-
-        this.authService.login(username, password).subscribe({
+        console.log('Datos de inicio de sesión:', {
+            username: this.loginForm.get('username')?.value,
+            passwordLength: this.loginForm.get('password')?.value?.length
+        });
+    
+        this.authService.login(
+            this.loginForm.get('username')?.value, 
+            this.loginForm.get('password')?.value
+        ).subscribe({
             next: (response) => {
-                console.log('Login successful', response);
-                this.router.navigate(['/vehicles']);
+                console.log('Respuesta de login:', {
+                    token: response?.data?.token ? 'Token presente' : 'Sin token',
+                    completeResponse: response
+                });
             },
             error: (error) => {
-                console.error('Login error', error);
-                this.error = error.error?.message || 'Login failed. Please try again.';
-                this.loading = false;
-            },
-            complete: () => {
-                this.loading = false;
+                console.error('Error de inicio de sesión:', {
+                    status: error.status,
+                    message: error.message,
+                    fullError: error
+                });
             }
         });
     }

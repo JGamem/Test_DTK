@@ -31,7 +31,6 @@ export class RegisterComponent {
         });
     }
 
-    // Validador para comprobar que las contraseñas coinciden
     passwordMatchValidator(g: FormGroup) {
         const password = g.get('password')?.value;
         const confirmPassword = g.get('confirmPassword')?.value;
