@@ -49,14 +49,19 @@ export class RegisterComponent {
         const { username, email, password } = this.registerForm.value;
 
         this.authService.register(username, email, password).subscribe({
-            next: () => {
+            next: (response) => {
+                console.log('Registro exitoso:', response);
                 this.router.navigate(['/login'], {
                     queryParams: { registered: 'true' }
                 });
             },
             error: (error) => {
-                console.error('Registration error', error);
-                this.error = error.error?.message || 'Registration failed. Please try again.';
+                console.error('Error de registro:', {
+                    status: error.status,
+                    mensaje: error.message,
+                    detalles: error.error
+                });
+                this.error = error.error?.message || 'Registro fallido. Por favor, inténtalo de nuevo.';
                 this.loading = false;
             },
             complete: () => {

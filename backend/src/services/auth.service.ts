@@ -54,14 +54,14 @@ export class AuthService {
             username: user.username,
         };
 
-        return jwt.sign(payload, process.env.JWT_SECRET || 'default_secret', {
+        return jwt.sign(payload, process.env.JWT_SECRET!, {
             expiresIn: '1d'
         });
     }
 
     verifyToken(token: string): any {
         try {
-            return jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+            return jwt.verify(token, process.env.JWT_SECRET!,);
         } catch (error) {
             throw new AppError('Invalid token', 401);
         }

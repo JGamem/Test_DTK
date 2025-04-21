@@ -24,7 +24,7 @@ export class AuthService {
     private loadToken(): void {
         if (isPlatformBrowser(this.platformId)) {
             const storedToken = localStorage.getItem('auth_token');
-            console.log('Token loaded:', !!storedToken);
+            console.log('Token cargado:', storedToken);
             this.token = storedToken;
         }
     }
@@ -33,17 +33,17 @@ export class AuthService {
         return this.http.post<any>(`${this.apiUrl}/auth/login`, { username, password })
             .pipe(
                 tap(response => {
-                    console.log('Login Response:', response);
+                    console.log('Respuesta de login completa:', response);
 
                     if (response?.data?.token) {
                         this.setToken(response.data.token);
                     } else {
-                        console.error('No token received', response);
-                        throw new Error('Login failed');
+                        console.error('No se recibió token válido', response);
+                        throw new Error('Inicio de sesión fallido');
                     }
                 }),
                 catchError(error => {
-                    console.error('Login Error:', error);
+                    console.error('Error de login:', error);
                     return throwError(() => error);
                 })
             );
@@ -56,14 +56,14 @@ export class AuthService {
             password
         }).pipe(
             tap(response => {
-                console.log('Registration Response:', response);
+                console.log('Respuesta de registro:', response);
 
                 if (response?.data?.token) {
                     this.setToken(response.data.token);
                 }
             }),
             catchError(error => {
-                console.error('Registration Error:', error);
+                console.error('Error de registro:', error);
                 return throwError(() => error);
             })
         );
@@ -71,46 +71,21 @@ export class AuthService {
 
     private setToken(token: string): void {
         if (isPlatformBrowser(this.platformId)) {
+            console.log('Estableciendo token:', token);
             this.token = token;
             localStorage.setItem('auth_token', token);
-            console.log('Token set successfully');
-        }
-    }
-
-    private decodeToken(token: string): any {
-        try {
-            return JSON.parse(atob(token.split('.')[1]));
-        } catch (error) {
-            console.error('Error al decodificar token:', error);
-            return null;
         }
     }
 
     getToken(): string | null {
-        const token = localStorage.getItem('auth_token');
-
-        if (token) {
-            try {
-                const decoded = this.decodeToken(token);
-                const currentTime = Math.floor(Date.now() / 1000);
-
-                if (decoded.exp && decoded.exp < currentTime) {
-                    console.warn('Token expirado');
-                    this.logout();
-                    return null;
-                }
-            } catch (error) {
-                console.error('Error al decodificar token:', error);
-                this.logout();
-                return null;
-            }
-        }
-
-        return token;
+        this.loadToken();
+        return this.token;
     }
 
     isAuthenticated(): boolean {
-        return !!this.getToken();
+        const token = this.getToken();
+        console.log('Estado de autenticación:', !!token);
+        return !!token;
     }
 
     logout(): void {
