@@ -10,25 +10,31 @@ export interface AuthRequest extends Request {
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
-
+        console.log('Headers de autenticación:', req.headers.authorization);
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             throw new AppError('Authentication required', 401);
         }
 
         const token = authHeader.split(' ')[1];
+        
+        if (!token) {
+            throw new AppError('Authentication required', 401);
+        }
         const authService = Container.get(AuthService);
-
+        
         try {
             const decoded = authService.verifyToken(token);
             req.user = decoded;
             next();
         } catch (error) {
+            console.error('Error al verificar token:', error);
             throw new AppError('Invalid or expired token', 401);
         }
     } catch (error: any) {
+        console.error('Error de autenticación:', error);
         res.status(error.statusCode || 401).json({
             success: false,
-            message: error.message
+            message: error.message || 'Authentication required'
         });
     }
 };

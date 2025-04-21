@@ -10,31 +10,19 @@ import { environment } from '../../environments/environment';
     providedIn: 'root'
 })
 export class AuthService {
-    private token: string | null = null;
     private apiUrl = environment.apiUrl;
+    private tokenKey = 'auth_token';
 
     constructor(
         private http: HttpClient,
         private router: Router,
         @Inject(PLATFORM_ID) private platformId: Object
-    ) {
-        this.loadToken();
-    }
-
-    private loadToken(): void {
-        if (isPlatformBrowser(this.platformId)) {
-            const storedToken = localStorage.getItem('auth_token');
-            console.log('Token cargado:', storedToken);
-            this.token = storedToken;
-        }
-    }
+    ) {}
 
     login(username: string, password: string): Observable<any> {
         return this.http.post<any>(`${this.apiUrl}/auth/login`, { username, password })
             .pipe(
                 tap(response => {
-                    console.log('Respuesta de login completa:', response);
-
                     if (response?.data?.token) {
                         this.setToken(response.data.token);
                     } else {
@@ -56,8 +44,6 @@ export class AuthService {
             password
         }).pipe(
             tap(response => {
-                console.log('Respuesta de registro:', response);
-
                 if (response?.data?.token) {
                     this.setToken(response.data.token);
                 }
@@ -71,27 +57,24 @@ export class AuthService {
 
     private setToken(token: string): void {
         if (isPlatformBrowser(this.platformId)) {
-            console.log('Estableciendo token:', token);
-            this.token = token;
-            localStorage.setItem('auth_token', token);
+            localStorage.setItem(this.tokenKey, token);
         }
     }
 
     getToken(): string | null {
-        this.loadToken();
-        return this.token;
+        if (isPlatformBrowser(this.platformId)) {
+            return localStorage.getItem(this.tokenKey);
+        }
+        return null;
     }
 
     isAuthenticated(): boolean {
-        const token = this.getToken();
-        console.log('Estado de autenticación:', !!token);
-        return !!token;
+        return !!this.getToken();
     }
 
     logout(): void {
-        this.token = null;
         if (isPlatformBrowser(this.platformId)) {
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem(this.tokenKey);
         }
         this.router.navigate(['/login']);
     }

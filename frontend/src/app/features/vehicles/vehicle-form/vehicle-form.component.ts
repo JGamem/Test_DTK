@@ -1,3 +1,4 @@
+// frontend/src/app/features/vehicles/vehicle-form/vehicle-form.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -13,7 +14,6 @@ import { AuthService } from '../../../services/auth.service';
 
 import { VehicleService } from '../../../services/vehicle.service';
 import { Vehicle } from '../../../models/vehicle.model';
-import { LoadingComponent } from '../../../shared/loading/loading.component';
 
 @Component({
   selector: 'app-vehicle-form',
@@ -32,7 +32,6 @@ import { LoadingComponent } from '../../../shared/loading/loading.component';
     MatProgressSpinnerModule
   ]
 })
-
 export class VehicleFormComponent implements OnInit {
   vehicleForm!: FormGroup;
   isEditMode = false;
@@ -46,10 +45,16 @@ export class VehicleFormComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private authService: AuthService 
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void {
+    // Verificar autenticación
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
     this.initForm();
 
     this.route.params.subscribe(params => {
@@ -103,37 +108,54 @@ export class VehicleFormComponent implements OnInit {
       return;
     }
 
+    // Verificar autenticación nuevamente antes de enviar
+    if (!this.authService.isAuthenticated()) {
+      this.snackBar.open('Your session has expired. Please login again.', 'Login', {
+        duration: 5000
+      }).onAction().subscribe(() => {
+        this.router.navigate(['/login']);
+      });
+      return;
+    }
+
     this.isLoading = true;
     const vehicleData: Vehicle = this.vehicleForm.value;
-
-    console.log('Estado de autenticación:', this.authService.isAuthenticated());
-    console.log('Token actual:', this.authService.getToken());
 
     if (this.isEditMode) {
       this.vehicleService.updateVehicle(this.vehicleId, vehicleData).subscribe({
         next: (response) => {
-          console.log('Vehículo actualizado:', response);
           this.snackBar.open('Vehicle updated successfully', 'Close', { duration: 3000 });
           this.router.navigate(['/vehicles']);
         },
         error: (error) => {
-          console.error('Error en la API:', error);
-          console.error('Respuesta completa:', error.error);
-          this.snackBar.open(`Error: ${error.error?.message || 'Unknown error'}`, 'Close', { duration: 3000 });
+          console.error('Error updating vehicle:', error);
+          let errorMsg = error.error?.message || 'Failed to update vehicle';
+
+          if (error.status === 401) {
+            errorMsg = 'Your session has expired. Please login again.';
+            this.authService.logout();
+          }
+
+          this.snackBar.open(errorMsg, 'Close', { duration: 3000 });
           this.isLoading = false;
         }
       });
     } else {
       this.vehicleService.createVehicle(vehicleData).subscribe({
         next: (response) => {
-          console.log('Vehículo creado:', response);
           this.snackBar.open('Vehicle created successfully', 'Close', { duration: 3000 });
           this.router.navigate(['/vehicles']);
         },
         error: (error) => {
-          console.error('Error en la API:', error);
-          console.error('Respuesta completa:', error.error);
-          this.snackBar.open(`Error: ${error.error?.message || 'Unknown error'}`, 'Close', { duration: 3000 });
+          console.error('Error creating vehicle:', error);
+          let errorMsg = error.error?.message || 'Failed to create vehicle';
+
+          if (error.status === 401) {
+            errorMsg = 'Your session has expired. Please login again.';
+            this.authService.logout();
+          }
+
+          this.snackBar.open(errorMsg, 'Close', { duration: 3000 });
           this.isLoading = false;
         }
       });
