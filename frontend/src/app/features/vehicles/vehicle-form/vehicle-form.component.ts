@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { NgIf } from '@angular/common';
+import { AuthService } from '../../../services/auth.service';
 
 import { VehicleService } from '../../../services/vehicle.service';
 import { Vehicle } from '../../../models/vehicle.model';
@@ -44,7 +45,8 @@ export class VehicleFormComponent implements OnInit {
     private vehicleService: VehicleService,
     private router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private authService: AuthService 
   ) { }
 
   ngOnInit(): void {
@@ -104,27 +106,34 @@ export class VehicleFormComponent implements OnInit {
     this.isLoading = true;
     const vehicleData: Vehicle = this.vehicleForm.value;
 
+    console.log('Estado de autenticación:', this.authService.isAuthenticated());
+    console.log('Token actual:', this.authService.getToken());
+
     if (this.isEditMode) {
       this.vehicleService.updateVehicle(this.vehicleId, vehicleData).subscribe({
-        next: () => {
+        next: (response) => {
+          console.log('Vehículo actualizado:', response);
           this.snackBar.open('Vehicle updated successfully', 'Close', { duration: 3000 });
           this.router.navigate(['/vehicles']);
         },
         error: (error) => {
-          console.error('Error updating vehicle', error);
-          this.snackBar.open('Error updating vehicle', 'Close', { duration: 3000 });
+          console.error('Error en la API:', error);
+          console.error('Respuesta completa:', error.error);
+          this.snackBar.open(`Error: ${error.error?.message || 'Unknown error'}`, 'Close', { duration: 3000 });
           this.isLoading = false;
         }
       });
     } else {
       this.vehicleService.createVehicle(vehicleData).subscribe({
-        next: () => {
+        next: (response) => {
+          console.log('Vehículo creado:', response);
           this.snackBar.open('Vehicle created successfully', 'Close', { duration: 3000 });
           this.router.navigate(['/vehicles']);
         },
         error: (error) => {
-          console.error('Error creating vehicle', error);
-          this.snackBar.open('Error creating vehicle', 'Close', { duration: 3000 });
+          console.error('Error en la API:', error);
+          console.error('Respuesta completa:', error.error);
+          this.snackBar.open(`Error: ${error.error?.message || 'Unknown error'}`, 'Close', { duration: 3000 });
           this.isLoading = false;
         }
       });
