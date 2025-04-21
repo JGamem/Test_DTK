@@ -1,64 +1,58 @@
 import { Request, Response } from 'express';
 import { VehicleService } from '../services/vehicle.service';
 import { CreateVehicleDto, UpdateVehicleDto } from '../dtos/vehicle.dto';
+import { validate } from '../utils/validation';
+import { createVehicleSchema, updateVehicleSchema } from '../schemas/vehicle.schema';
+import { AuthRequest } from '../middlewares/auth.middleware';
 
 export class VehicleController {
-    private vehicleService = new VehicleService();
+    constructor(private vehicleService: VehicleService) { }
 
-    /**
-     * Get all vehicles
-     */
-    public getAllVehicles = async (req: Request, res: Response): Promise<void> => {
+    getAllVehicles = async (req: Request, res: Response): Promise<void> => {
         try {
-            const vehicles = await this.vehicleService.findAll();
+            const page = req.query.page ? parseInt(req.query.page as string) : 1;
+            const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+
+            const result = await this.vehicleService.findAll({ page, limit });
+
             res.status(200).json({
                 success: true,
-                data: vehicles,
+                ...result
             });
-        } catch (error) {
-            res.status(500).json({
+        } catch (error: any) {
+            res.status(error.statusCode || 500).json({
                 success: false,
-                message: 'Failed to fetch vehicles',
-                error: error instanceof Error ? error.message : 'Unknown error',
+                message: error.message || 'Failed to fetch vehicles',
+                error: error.statusCode ? error.message : 'Internal server error'
             });
         }
     };
 
-    /**
-     * Get a vehicle by id
-     */
-    public getVehicleById = async (req: Request, res: Response): Promise<void> => {
+    getVehicleById = async (req: Request, res: Response): Promise<void> => {
         try {
             const id = req.params.id;
             const vehicle = await this.vehicleService.findById(id);
-
-            if (!vehicle) {
-                res.status(404).json({
-                    success: false,
-                    message: `Vehicle with id ${id} not found`,
-                });
-                return;
-            }
 
             res.status(200).json({
                 success: true,
                 data: vehicle,
             });
-        } catch (error) {
-            res.status(500).json({
+        } catch (error: any) {
+            res.status(error.statusCode || 500).json({
                 success: false,
-                message: 'Failed to fetch vehicle',
-                error: error instanceof Error ? error.message : 'Unknown error',
+                message: error.message || 'Failed to fetch vehicle',
+                error: error.statusCode ? error.message : 'Internal server error'
             });
         }
     };
 
-    /**
-     * Create a new vehicle
-     */
-    public createVehicle = async (req: Request, res: Response): Promise<void> => {
+    createVehicle = async (req: AuthRequest, res: Response): Promise<void> => {
         try {
             const vehicleData: CreateVehicleDto = req.body;
+
+            // Validate request
+            await validate(createVehicleSchema, vehicleData);
+
             const newVehicle = await this.vehicleService.create(vehicleData);
 
             res.status(201).json({
@@ -66,72 +60,53 @@ export class VehicleController {
                 data: newVehicle,
                 message: 'Vehicle created successfully',
             });
-        } catch (error) {
-            res.status(500).json({
+        } catch (error: any) {
+            res.status(error.statusCode || 500).json({
                 success: false,
-                message: 'Failed to create vehicle',
-                error: error instanceof Error ? error.message : 'Unknown error',
+                message: error.message || 'Failed to create vehicle',
+                error: error.statusCode ? error.message : 'Internal server error'
             });
         }
     };
 
-    /**
-     * Update an existing vehicle
-     */
-    public updateVehicle = async (req: Request, res: Response): Promise<void> => {
+    updateVehicle = async (req: AuthRequest, res: Response): Promise<void> => {
         try {
             const id = req.params.id;
             const vehicleData: UpdateVehicleDto = req.body;
 
-            const updatedVehicle = await this.vehicleService.update(id, vehicleData);
+            // Validate request
+            await validate(updateVehicleSchema, vehicleData);
 
-            if (!updatedVehicle) {
-                res.status(404).json({
-                    success: false,
-                    message: `Vehicle with id ${id} not found`,
-                });
-                return;
-            }
+            const updatedVehicle = await this.vehicleService.update(id, vehicleData);
 
             res.status(200).json({
                 success: true,
                 data: updatedVehicle,
                 message: 'Vehicle updated successfully',
             });
-        } catch (error) {
-            res.status(500).json({
+        } catch (error: any) {
+            res.status(error.statusCode || 500).json({
                 success: false,
-                message: 'Failed to update vehicle',
-                error: error instanceof Error ? error.message : 'Unknown error',
+                message: error.message || 'Failed to update vehicle',
+                error: error.statusCode ? error.message : 'Internal server error'
             });
         }
     };
 
-    /**
-     * Delete a vehicle
-     */
-    public deleteVehicle = async (req: Request, res: Response): Promise<void> => {
+    deleteVehicle = async (req: AuthRequest, res: Response): Promise<void> => {
         try {
             const id = req.params.id;
-            const isDeleted = await this.vehicleService.delete(id);
-
-            if (!isDeleted) {
-                res.status(404).json({
-                    success: false,
-                    message: `Vehicle with id ${id} not found`,
-                });
-                return;
-            }
+            await this.vehicleService.delete(id);
 
             res.status(200).json({
                 success: true,
                 message: 'Vehicle deleted successfully',
             });
-        } catch (error) {
-            res.status(500).json({
+        } catch (error: any) {
+            res.status(error.statusCode || 500).json({
                 success: false,
-                message: 'Failed to delete vehicle',
-                error: error instanceof Error ? error.message : 'Unknown error',
+                message: error.message || 'Failed to delete vehicle',
+                error: error.statusCode ? error.message : 'Internal server error'
             });
         }
     };

@@ -1,53 +1,58 @@
+import { Service } from 'typedi';
 import { Group } from '../entities/group.entity';
 import { GroupRepository } from '../repositories/group.repository';
 import { VehicleRepository } from '../repositories/vehicle.repository';
 import { CreateGroupDto, VehicleGroupDto } from '../dtos/group.dto';
+import { AppError } from '../utils/app-error';
+import { PaginationOptions, PaginatedResult } from '../utils/pagination';
 
+@Service()
 export class GroupService {
-    /**
-     * Get all groups with their vehicles
-     */
-    async findAll(): Promise<Group[]> {
-        return GroupRepository.find({
+    async findAll(options?: PaginationOptions): Promise<PaginatedResult<Group>> {
+        const [groups, total] = await GroupRepository.findAndCount({
             relations: ['vehicles'],
+            skip: options?.page ? (options.page - 1) * (options?.limit || 10) : 0,
+            take: options?.limit || 10
         });
+
+        return {
+            data: groups,
+            meta: {
+                total,
+                page: options?.page || 1,
+                limit: options?.limit || 10,
+                totalPages: Math.ceil(total / (options?.limit || 10))
+            }
+        };
     }
 
-    /**
-     * Get a group by id with its vehicles
-     */
-    async findById(id: string): Promise<Group | null> {
-        return GroupRepository.findOne({
+    async findById(id: string): Promise<Group> {
+        const group = await GroupRepository.findOne({
             where: { id },
             relations: ['vehicles'],
         });
-    }
 
-    /**
-     * Create a new group
-     */
-    async create(groupData: CreateGroupDto): Promise<Group> {
-        try {
-            const existingGroup = await GroupRepository.findOne({
-                where: { name: groupData.name },
-            });
-
-            if (existingGroup) {
-                throw new Error('A group with this name already exists');
-            }
-
-            const newGroup = GroupRepository.create(groupData);
-            return await GroupRepository.save(newGroup);
-        } catch (error) {
-            console.error('Error creating group:', error);
-            throw error;
+        if (!group) {
+            throw new AppError(`Group with id ${id} not found`, 404);
         }
+
+        return group;
     }
 
-    /**
-     * Add a vehicle to a group
-     */
-    async addVehicleToGroup(data: VehicleGroupDto): Promise<Group | null> {
+    async create(groupData: CreateGroupDto): Promise<Group> {
+        const existingGroup = await GroupRepository.findOne({
+            where: { name: groupData.name },
+        });
+
+        if (existingGroup) {
+            throw new AppError('A group with this name already exists', 409);
+        }
+
+        const newGroup = GroupRepository.create(groupData);
+        return GroupRepository.save(newGroup);
+    }
+
+    async addVehicleToGroup(data: VehicleGroupDto): Promise<Group> {
         const { vehicleId, groupId } = data;
 
         const group = await this.findById(groupId);
@@ -55,14 +60,14 @@ export class GroupService {
             where: { id: vehicleId }
         });
 
-        if (!group || !vehicle) return null;
+        if (!vehicle) {
+            throw new AppError(`Vehicle with id ${vehicleId} not found`, 404);
+        }
 
-        // Check if the vehicle is already in the group
         if (group.vehicles && group.vehicles.some(v => v.id === vehicleId)) {
             return group; // Vehicle already in the group
         }
 
-        // Initialize vehicles array if it doesn't exist
         if (!group.vehicles) {
             group.vehicles = [];
         }
@@ -71,16 +76,15 @@ export class GroupService {
         return GroupRepository.save(group);
     }
 
-    /**
-     * Remove a vehicle from a group
-     */
-    async removeVehicleFromGroup(data: VehicleGroupDto): Promise<Group | null> {
+    async removeVehicleFromGroup(data: VehicleGroupDto): Promise<Group> {
         const { vehicleId, groupId } = data;
 
         const group = await this.findById(groupId);
-        if (!group || !group.vehicles) return null;
 
-        // Filter out the vehicle
+        if (!group.vehicles) {
+            return group;
+        }
+
         group.vehicles = group.vehicles.filter(v => v.id !== vehicleId);
         return GroupRepository.save(group);
     }

@@ -1,9 +1,13 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { LoginComponent } from './login/login.component';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
 // Angular Material
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -39,18 +43,23 @@ import { GroupListComponent } from './features/groups/group-list/group-list.comp
 import { GroupFormComponent } from './features/groups/group-form/group-form.component';
 import { GroupDetailComponent } from './features/groups/group-detail/group-detail.component';
 
-@NgModule({
+({
     declarations: [
         AppComponent,
         HeaderComponent,
         FooterComponent,
         LoadingComponent,
+        LoginComponent,
         ConfirmDialogComponent,
         VehicleListComponent,
         VehicleFormComponent,
         VehicleDetailComponent,
         GroupListComponent,
         GroupFormComponent,
+        BrowserModule,
+        CommonModule,
+        ReactiveFormsModule,
+        RouterModule,
         GroupDetailComponent
     ],
     imports: [
@@ -61,6 +70,7 @@ import { GroupDetailComponent } from './features/groups/group-detail/group-detai
         ReactiveFormsModule,
         FormsModule,
         DragDropModule,
+        AppRoutingModule,
         // Angular Material
         MatToolbarModule,
         MatButtonModule,
@@ -76,9 +86,18 @@ import { GroupDetailComponent } from './features/groups/group-detail/group-detai
         MatSnackBarModule,
         MatProgressSpinnerModule,
         MatChipsModule,
-        MatTooltipModule
+        MatTooltipModule,
+        ReactiveFormsModule,
+        FormsModule,
+        CommonModule,
+        ReactiveFormsModule
     ],
-    providers: [],
+    exports: [
+        LoginComponent
+    ],
+    providers: [
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+    ],
     bootstrap: [AppComponent]
 })
 export class AppModule { }

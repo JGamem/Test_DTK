@@ -1,52 +1,61 @@
+// src/services/vehicle.service.ts
+import { Service } from 'typedi';
 import { Vehicle } from '../entities/vehicle.entity';
 import { VehicleRepository } from '../repositories/vehicle.repository';
 import { CreateVehicleDto, UpdateVehicleDto } from '../dtos/vehicle.dto';
+import { AppError } from '../utils/app-error';
+import { PaginationOptions, PaginatedResult } from '../utils/pagination';
 
+@Service()
 export class VehicleService {
-    /**
-     * Get all vehicles with their related groups
-     */
-    async findAll(): Promise<Vehicle[]> {
-        return VehicleRepository.find({
+    async findAll(options?: PaginationOptions): Promise<PaginatedResult<Vehicle>> {
+        const [vehicles, total] = await VehicleRepository.findAndCount({
             relations: ['groups'],
+            skip: options?.page ? (options.page - 1) * (options?.limit || 10) : 0,
+            take: options?.limit || 10
         });
+
+        return {
+            data: vehicles,
+            meta: {
+                total,
+                page: options?.page || 1,
+                limit: options?.limit || 10,
+                totalPages: Math.ceil(total / (options?.limit || 10))
+            }
+        };
     }
 
-    /**
-     * Get a vehicle by id with its related groups
-     */
-    async findById(id: string): Promise<Vehicle | null> {
-        return VehicleRepository.findOne({
+    async findById(id: string): Promise<Vehicle> {
+        const vehicle = await VehicleRepository.findOne({
             where: { id },
             relations: ['groups'],
         });
+
+        if (!vehicle) {
+            throw new AppError(`Vehicle with id ${id} not found`, 404);
+        }
+
+        return vehicle;
     }
 
-    /**
-     * Create a new vehicle
-     */
     async create(vehicleData: CreateVehicleDto): Promise<Vehicle> {
         const newVehicle = VehicleRepository.create(vehicleData);
         return VehicleRepository.save(newVehicle);
     }
 
-    /**
-     * Update an existing vehicle
-     */
-    async update(id: string, vehicleData: UpdateVehicleDto): Promise<Vehicle | null> {
+    async update(id: string, vehicleData: UpdateVehicleDto): Promise<Vehicle> {
         const vehicle = await this.findById(id);
-        if (!vehicle) return null;
 
-        // Update vehicle properties
         VehicleRepository.merge(vehicle, vehicleData);
         return VehicleRepository.save(vehicle);
     }
 
-    /**
-     * Delete a vehicle
-     */
-    async delete(id: string): Promise<boolean> {
+    async delete(id: string): Promise<void> {
         const result = await VehicleRepository.delete(id);
-        return (result.affected ?? 0) > 0;
+
+        if (result.affected === 0) {
+            throw new AppError(`Vehicle with id ${id} not found`, 404);
+        }
     }
 }

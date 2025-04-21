@@ -6,8 +6,16 @@ import { VehicleDetailComponent } from './features/vehicles/vehicle-detail/vehic
 import { GroupListComponent } from './features/groups/group-list/group-list.component';
 import { GroupFormComponent } from './features/groups/group-form/group-form.component';
 import { GroupDetailComponent } from './features/groups/group-detail/group-detail.component';
+import { LoginComponent } from './login/login.component';
+import { AuthGuard } from './auth.guard';
 
 const routes: Routes = [
+    { path: 'login', component: LoginComponent },
+    {
+        path: 'vehicles',
+        component: VehicleListComponent,
+        canActivate: [AuthGuard]
+    },
     { path: '', redirectTo: '/vehicles', pathMatch: 'full' },
     { path: 'vehicles', component: VehicleListComponent },
     { path: 'vehicles/new', component: VehicleFormComponent },
@@ -16,7 +24,9 @@ const routes: Routes = [
     { path: 'groups', component: GroupListComponent },
     { path: 'groups/new', component: GroupFormComponent },
     { path: 'groups/:id', component: GroupDetailComponent },
-    { path: '**', redirectTo: '/vehicles' }
+    { path: '**', redirectTo: '/vehicles' },
+    { path: 'login', component: LoginComponent },
+    { path: '', redirectTo: '/login', pathMatch: 'full' }
 ];
 
 @NgModule({
