@@ -1,33 +1,49 @@
 <div class="login-container">
-    <h2>Login</h2>
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Login</mat-card-title>
+        </mat-card-header>
 
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" formControlName="username" class="form-control">
-            <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" class="error-message">
-                Username is required
-            </div>
-        </div>
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <mat-card-content>
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Username</mat-label>
+                    <input matInput formControlName="username" placeholder="Enter your username">
+                    <mat-icon matPrefix>person</mat-icon>
+                    <mat-error *ngIf="loginForm.get('username')?.hasError('required')">
+                        Username is required
+                    </mat-error>
+                </mat-form-field>
 
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" formControlName="password" class="form-control">
-            <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
-                Password must be at least 6 characters
-            </div>
-        </div>
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Password</mat-label>
+                    <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password"
+                        placeholder="Enter your password">
+                    <mat-icon matPrefix>lock</mat-icon>
+                    <button type="button" mat-icon-button matSuffix (click)="togglePasswordVisibility()">
+                        <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+                    </button>
+                    <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+                        Password is required
+                    </mat-error>
+                    <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
+                        Password must be at least 6 characters
+                    </mat-error>
+                </mat-form-field>
 
-        <div *ngIf="error" class="alert alert-danger">
-            {{ error }}
-        </div>
+                <div *ngIf="error" class="error-message">
+                    <mat-icon>error</mat-icon> {{ error }}
+                </div>
+            </mat-card-content>
 
-        <button type="submit" [disabled]="loginForm.invalid || loading" class="btn btn-primary">
-            {{ loading ? 'Logging in...' : 'Login' }}
-        </button>
-    </form>
-
-    <p class="mt-3">
-        Don't have an account? <a routerLink="/register">Register</a>
-    </p>
+            <mat-card-actions align="end">
+                <button mat-button type="button" routerLink="/register">Register</button>
+                <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid || loading">
+                    <mat-icon *ngIf="!loading">login</mat-icon>
+                    <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+                    <span>{{ loading ? 'Logging in...' : 'Login' }}</span>
+                </button>
+            </mat-card-actions>
+        </form>
+    </mat-card>
 </div>

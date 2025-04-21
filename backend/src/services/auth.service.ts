@@ -61,8 +61,12 @@ export class AuthService {
 
     verifyToken(token: string): any {
         try {
-            return jwt.verify(token, process.env.JWT_SECRET!,);
+            console.log('Verificando token con JWT_SECRET:', process.env.JWT_SECRET?.substring(0, 10) + '...');
+            const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+            console.log('Token decodificado:', decoded);
+            return decoded;
         } catch (error) {
+            console.error('Error verificando token JWT:', error);
             throw new AppError('Invalid token', 401);
         }
     }

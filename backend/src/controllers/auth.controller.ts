@@ -4,6 +4,7 @@ import { AuthService } from '../services/auth.service';
 import { LoginDto, RegisterDto } from '../dtos/auth.dto';
 import { validate } from '../utils/validation';
 import { loginSchema, registerSchema } from '../schemas/auth.schema';
+import { AuthRequest } from '../middlewares/auth.middleware';
 
 export class AuthController {
     constructor(private authService: AuthService) { }
@@ -49,6 +50,23 @@ export class AuthController {
             res.status(error.statusCode || 500).json({
                 success: false,
                 message: error.message || 'Failed to register',
+                error: error.statusCode ? error.message : 'Internal server error'
+            });
+        }
+    };
+
+    verifyAuth = async (req: AuthRequest, res: Response): Promise<void> => {
+        try {
+            // Si llega aquí, es porque pasó el middleware de autenticación
+            res.status(200).json({
+                success: true,
+                message: 'Authenticated successfully',
+                user: req.user
+            });
+        } catch (error: any) {
+            res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || 'Failed to verify authentication',
                 error: error.statusCode ? error.message : 'Internal server error'
             });
         }

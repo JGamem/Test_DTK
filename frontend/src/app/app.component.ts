@@ -11,5 +11,5 @@ import { FooterComponent } from './shared/footer/footer.component';
   imports: [RouterOutlet, HeaderComponent, FooterComponent]
 })
 export class AppComponent {
-  title = 'Vehicle Management System';
+  title = 'Prueba Detektor';
 }

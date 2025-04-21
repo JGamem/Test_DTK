@@ -48,23 +48,19 @@ export class RegisterComponent {
 
         const { username, email, password } = this.registerForm.value;
 
+        console.log('Datos de registro:', { username, email, password: '****' });
+
         this.authService.register(username, email, password).subscribe({
             next: (response) => {
                 console.log('Registro exitoso:', response);
-                this.router.navigate(['/login'], {
-                    queryParams: { registered: 'true' }
-                });
+                
+                setTimeout(() => {
+                    this.router.navigate(['/vehicles']);
+                }, 100);
             },
             error: (error) => {
-                console.error('Error de registro:', {
-                    status: error.status,
-                    mensaje: error.message,
-                    detalles: error.error
-                });
+                console.error('Error de registro:', error);
                 this.error = error.error?.message || 'Registro fallido. Por favor, inténtalo de nuevo.';
-                this.loading = false;
-            },
-            complete: () => {
                 this.loading = false;
             }
         });

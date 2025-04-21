@@ -10,20 +10,27 @@ export interface AuthRequest extends Request {
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
-        console.log('Headers de autenticación:', req.headers.authorization);
+
+        console.log('Headers completos:', JSON.stringify(req.headers));
+        console.log('Header de autorización:', authHeader);
+
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             throw new AppError('Authentication required', 401);
         }
 
         const token = authHeader.split(' ')[1];
-        
+
         if (!token) {
             throw new AppError('Authentication required', 401);
         }
+
+        console.log('Token extraído:', token.substring(0, 10) + '...');
+
         const authService = Container.get(AuthService);
-        
+
         try {
             const decoded = authService.verifyToken(token);
+            console.log('Token verificado correctamente, payload:', decoded);
             req.user = decoded;
             next();
         } catch (error) {

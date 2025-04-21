@@ -3,6 +3,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-header',
@@ -14,9 +16,16 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     MatButtonModule,
     MatIconModule,
     RouterLink,
-    RouterLinkActive
+    RouterLinkActive,
+    NgIf
   ]
 })
 export class HeaderComponent {
-  title = 'Vehicle Management System';
+  title = 'Prueba Detektor';
+
+  constructor(public authService: AuthService) { }
+
+  logout(): void {
+    this.authService.logout();
+  }
 }

@@ -7,7 +7,7 @@
             <span class="logo-text">{{ title }}</span>
         </a>
         <div class="spacer"></div>
-        <nav>
+        <nav *ngIf="authService.isAuthenticated()">
             <a mat-button routerLink="/vehicles" routerLinkActive="active" class="nav-link">
                 <mat-icon>commute</mat-icon>
                 <span>Vehicles</span>
@@ -16,6 +16,10 @@
                 <mat-icon>category</mat-icon>
                 <span>Groups</span>
             </a>
+            <button mat-button (click)="logout()" class="nav-link">
+                <mat-icon>exit_to_app</mat-icon>
+                <span>Logout</span>
+            </button>
         </nav>
     </div>
 </mat-toolbar>

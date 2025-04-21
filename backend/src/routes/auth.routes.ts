@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { Container } from '../app.module';
 import { AuthController } from '../controllers/auth.controller';
+import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 const authController = Container.get(AuthController);
 
 router.post('/login', authController.login);
 router.post('/register', authController.register);
+router.get('/verify', authenticate, authController.verifyAuth);
 
 export default router;
 

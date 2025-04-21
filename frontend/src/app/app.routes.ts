@@ -11,42 +11,20 @@ import { RegisterComponent } from './register/register.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
-    { path: '', redirectTo: '/login', pathMatch: 'full' },
     { path: 'register', component: RegisterComponent },
     {
-        path: 'vehicles',
-        component: VehicleListComponent,
-        canActivate: [AuthGuard]
-    },
-    {
-        path: 'vehicles/new',
-        component: VehicleFormComponent,
-        canActivate: [AuthGuard]
-    },
-    {
-        path: 'vehicles/edit/:id',
-        component: VehicleFormComponent,
-        canActivate: [AuthGuard]
-    },
-    {
-        path: 'vehicles/:id',
-        component: VehicleDetailComponent,
-        canActivate: [AuthGuard]
-    },
-    {
-        path: 'groups',
-        component: GroupListComponent,
-        canActivate: [AuthGuard]
-    },
-    {
-        path: 'groups/new',
-        component: GroupFormComponent,
-        canActivate: [AuthGuard]
-    },
-    {
-        path: 'groups/:id',
-        component: GroupDetailComponent,
-        canActivate: [AuthGuard]
+        path: '',
+        canActivate: [AuthGuard],
+        children: [
+            { path: '', redirectTo: 'vehicles', pathMatch: 'full' },
+            { path: 'vehicles', component: VehicleListComponent },
+            { path: 'vehicles/new', component: VehicleFormComponent },
+            { path: 'vehicles/edit/:id', component: VehicleFormComponent },
+            { path: 'vehicles/:id', component: VehicleDetailComponent },
+            { path: 'groups', component: GroupListComponent },
+            { path: 'groups/new', component: GroupFormComponent },
+            { path: 'groups/:id', component: GroupDetailComponent },
+        ]
     },
     { path: '**', redirectTo: '/login' }
 ];

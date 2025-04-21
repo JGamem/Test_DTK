@@ -1,7 +1,7 @@
 {
   "name": "prueba_dtk",
   "version": "1.0.0",
-  "description": "Backend for Vehicle Management System",
+  "description": "Backend for Prueba Detektor",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

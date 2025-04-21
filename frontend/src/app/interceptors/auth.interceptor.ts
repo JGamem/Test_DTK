@@ -1,51 +1,48 @@
-import { Injectable } from '@angular/core';
 import {
     HttpRequest,
-    HttpHandler,
-    HttpEvent,
-    HttpInterceptor,
+    HttpHandlerFn,
+    HttpInterceptorFn,
     HttpErrorResponse
 } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { inject } from '@angular/core';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-    constructor(
-        private authService: AuthService,
-        private router: Router
-    ) { }
+export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
+    const authService = inject(AuthService);
+    const router = inject(Router);
+    
+    const token = authService.getToken();
+    const isApiUrl = req.url.startsWith(environment.apiUrl);
 
-    intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-        const token = this.authService.getToken();
+    console.log('Interceptando petición a:', req.url);
+    console.log('Es URL de API:', isApiUrl);
+    console.log('Token presente:', !!token);
 
-        console.group('Detalles de Solicitud HTTP');
-        console.log('URL:', request.url);
-        console.log('Método:', request.method);
-        console.log('Token presente:', !!token);
-        console.groupEnd();
-
-        if (token) {
-            request = request.clone({
-                setHeaders: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-        }
-
-        return next.handle(request).pipe(
-            catchError((error: HttpErrorResponse) => {
-                if (error.status === 401) {
-                    console.warn('Sesión expirada o token inválido');
-                    this.authService.logout();
-                    this.router.navigate(['/login'], {
-                        queryParams: { expired: 'true' }
-                    });
-                }
-                return throwError(() => error);
-            })
-        );
+    if (token && isApiUrl) {
+        console.log('Añadiendo token a la petición');
+        req = req.clone({
+            setHeaders: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        console.log('Headers después de añadir token:', req.headers.keys());
     }
-}
+
+    return next(req).pipe(
+        catchError((error: HttpErrorResponse) => {
+            console.error('Error en petición HTTP:', error);
+            
+            if (error.status === 401) {
+                console.warn('Error 401: Unauthorized');
+                authService.logout();
+                router.navigate(['/login'], {
+                    queryParams: { expired: 'true' }
+                });
+            }
+            return throwError(() => error);
+        })
+    );
+};
