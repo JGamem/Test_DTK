@@ -17,26 +17,18 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
     const token = authService.getToken();
     const isApiUrl = req.url.startsWith(environment.apiUrl);
 
-    console.log('Interceptando petición a:', req.url);
-    console.log('Es URL de API:', isApiUrl);
-    console.log('Token presente:', !!token);
-
     if (token && isApiUrl) {
-        console.log('Añadiendo token a la petición');
+        const cleanToken = token.trim();
         req = req.clone({
             setHeaders: {
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${cleanToken}`
             }
         });
-        console.log('Headers después de añadir token:', req.headers.keys());
     }
 
     return next(req).pipe(
         catchError((error: HttpErrorResponse) => {
-            console.error('Error en petición HTTP:', error);
-            
             if (error.status === 401) {
-                console.warn('Error 401: Unauthorized');
                 authService.logout();
                 router.navigate(['/login'], {
                     queryParams: { expired: 'true' }

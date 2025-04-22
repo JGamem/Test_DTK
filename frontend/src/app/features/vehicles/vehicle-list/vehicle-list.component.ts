@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -12,11 +12,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
-import { NgIf } from '@angular/common';
+import { NgIf, NgFor } from '@angular/common';
+import { Subscription } from 'rxjs';
 
 import { VehicleService } from '../../../services/vehicle.service';
 import { Vehicle } from '../../../models/vehicle.model';
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { RefreshService } from '../../../services/refresh.service';
 
 @Component({
   selector: 'app-vehicle-list',
@@ -38,10 +40,13 @@ import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-d
     RouterLink
   ]
 })
-export class VehicleListComponent implements OnInit, AfterViewInit {
+export class VehicleListComponent implements OnInit, AfterViewInit, OnDestroy {
   displayedColumns: string[] = ['brand', 'model', 'year', 'color', 'location', 'actions'];
   dataSource = new MatTableDataSource<Vehicle>([]);
   isLoading = true;
+  paginatorReady = false;
+  sortReady = false;
+  private refreshSubscription!: Subscription;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -49,25 +54,104 @@ export class VehicleListComponent implements OnInit, AfterViewInit {
   constructor(
     private vehicleService: VehicleService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private refreshService: RefreshService
   ) { }
 
   ngOnInit(): void {
+    this.dataSource = new MatTableDataSource<Vehicle>([]);
     this.loadVehicles();
+
+    this.refreshSubscription = this.refreshService.refresh$.subscribe(() => {
+      console.log("Recibida señal de actualización");
+      this.loadVehicles();
+    });
   }
 
   ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    setTimeout(() => {
+      this.initializePaginatorAndSort();
+    }, 300);
+  }
+
+  initializePaginatorAndSort(): void {
+    try {
+      if (this.paginator) {
+        console.log("Paginator encontrado, inicializando");
+        this.dataSource.paginator = this.paginator;
+        this.paginator.pageSize = 5;
+        this.paginatorReady = true;
+      } else {
+        console.warn("Paginator no disponible");
+        setTimeout(() => {
+          if (this.paginator) {
+            console.log("Paginator encontrado en segundo intento");
+            this.dataSource.paginator = this.paginator;
+            this.paginator.pageSize = 5;
+            this.paginatorReady = true;
+          } else {
+            console.error("Paginator sigue sin estar disponible");
+          }
+        }, 500);
+      }
+
+      if (this.sort) {
+        console.log("Sort encontrado, inicializando");
+        this.dataSource.sort = this.sort;
+        this.sortReady = true;
+      } else {
+        console.warn("Sort no disponible");
+        setTimeout(() => {
+          if (this.sort) {
+            console.log("Sort encontrado en segundo intento");
+            this.dataSource.sort = this.sort;
+            this.sortReady = true;
+          } else {
+            console.error("Sort sigue sin estar disponible");
+          }
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Error inicializando paginador y ordenador:", error);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshSubscription) {
+      this.refreshSubscription.unsubscribe();
+    }
   }
 
   loadVehicles(): void {
     this.isLoading = true;
+    console.log("Cargando vehículos...");
+
     this.vehicleService.getAllVehicles().subscribe({
       next: (response) => {
-        this.dataSource.data = response.data;
-        this.dataSource.paginator = this.paginator;
-        this.dataSource.sort = this.sort;
+        console.log("Respuesta recibida:", response);
+
+        if (response && response.data) {
+          this.dataSource.data = response.data;
+          console.log("Datos cargados:", this.dataSource.data.length, "vehículos");
+
+          if (this.paginatorReady && this.paginator) {
+            this.dataSource.paginator = this.paginator;
+          }
+
+          if (this.sortReady && this.sort) {
+            this.dataSource.sort = this.sort;
+          }
+
+          if (!this.paginatorReady || !this.sortReady) {
+            setTimeout(() => {
+              this.initializePaginatorAndSort();
+            }, 200);
+          }
+        } else {
+          console.error('Format is not valid:', response);
+          this.snackBar.open('Vehicle format is not valid', 'Cerrar', { duration: 3000 });
+        }
+
         this.isLoading = false;
       },
       error: (error) => {

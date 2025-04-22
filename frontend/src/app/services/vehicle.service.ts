@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { Vehicle } from '../models/vehicle.model';
+import { catchError, throwError } from 'rxjs';
 
 @Injectable({
     providedIn: 'root'
@@ -12,7 +13,10 @@ export class VehicleService {
     constructor(private apiService: ApiService) { }
 
     getAllVehicles(): Observable<{ success: boolean; data: Vehicle[] }> {
-        return this.apiService.get<{ success: boolean; data: Vehicle[] }>(this.endpoint);
+        const timestamp = new Date().getTime();
+        return this.apiService.get<{ success: boolean; data: Vehicle[] }>(
+            `${this.endpoint}?_=${timestamp}`
+        );
     }
 
     getVehicleById(id: string): Observable<{ success: boolean; data: Vehicle }> {
@@ -20,8 +24,15 @@ export class VehicleService {
     }
 
     createVehicle(vehicle: Vehicle): Observable<{ success: boolean; data: Vehicle; message: string }> {
+        console.log('Service sending vehicle data:', vehicle);
+
         return this.apiService.post<Vehicle, { success: boolean; data: Vehicle; message: string }>(
             this.endpoint, vehicle
+        ).pipe(
+            catchError(error => {
+                console.error('Service error creating vehicle:', error);
+                return throwError(() => error);
+            })
         );
     }
 

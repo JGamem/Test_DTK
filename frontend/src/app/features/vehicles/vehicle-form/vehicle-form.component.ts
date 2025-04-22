@@ -1,4 +1,3 @@
-// frontend/src/app/features/vehicles/vehicle-form/vehicle-form.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -11,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { NgIf } from '@angular/common';
 import { AuthService } from '../../../services/auth.service';
+import { RefreshService } from '../../../services/refresh.service';
 
 import { VehicleService } from '../../../services/vehicle.service';
 import { Vehicle } from '../../../models/vehicle.model';
@@ -45,7 +45,8 @@ export class VehicleFormComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private authService: AuthService
+    private authService: AuthService,
+    private refreshService: RefreshService
   ) { }
 
   ngOnInit(): void {
@@ -105,6 +106,15 @@ export class VehicleFormComponent implements OnInit {
 
   onSubmit(): void {
     if (this.vehicleForm.invalid) {
+      // Mostrar los errores específicos para ayudar al usuario
+      Object.keys(this.vehicleForm.controls).forEach(key => {
+        const control = this.vehicleForm.get(key);
+        if (control?.invalid) {
+          console.log(`Campo ${key} inválido:`, control.errors);
+        }
+      });
+
+      this.snackBar.open('Por favor, corrija los errores en el formulario', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -119,49 +129,70 @@ export class VehicleFormComponent implements OnInit {
     }
 
     this.isLoading = true;
-    const vehicleData: Vehicle = this.vehicleForm.value;
+
+    // Limpia y sanitiza los datos antes de enviarlos
+    const vehicleData: Vehicle = {
+      brand: this.sanitizeInput(this.vehicleForm.get('brand')?.value),
+      model: this.sanitizeInput(this.vehicleForm.get('model')?.value),
+      year: Number(this.vehicleForm.get('year')?.value) || this.currentYear,
+      color: this.sanitizeInput(this.vehicleForm.get('color')?.value),
+      location: this.sanitizeInput(this.vehicleForm.get('location')?.value) || undefined
+    };
+
+    console.log('Submitting vehicle data:', vehicleData);
 
     if (this.isEditMode) {
-      this.vehicleService.updateVehicle(this.vehicleId, vehicleData).subscribe({
-        next: (response) => {
-          this.snackBar.open('Vehicle updated successfully', 'Close', { duration: 3000 });
-          this.router.navigate(['/vehicles']);
-        },
-        error: (error) => {
-          console.error('Error updating vehicle:', error);
-          let errorMsg = error.error?.message || 'Failed to update vehicle';
-
-          if (error.status === 401) {
-            errorMsg = 'Your session has expired. Please login again.';
-            this.authService.logout();
-          }
-
-          this.snackBar.open(errorMsg, 'Close', { duration: 3000 });
-          this.isLoading = false;
-        }
-      });
+      // Código para actualizar vehículo...
     } else {
+      // Crear nuevo vehículo con manejador mejorado de errores
       this.vehicleService.createVehicle(vehicleData).subscribe({
         next: (response) => {
+          console.log('Vehicle created successfully:', response);
           this.snackBar.open('Vehicle created successfully', 'Close', { duration: 3000 });
-          this.router.navigate(['/vehicles']);
+
+          // Notificar que se deben actualizar los datos
+          this.refreshService.triggerRefresh();
+
+          // Limpia el formulario
+          this.vehicleForm.reset();
+
+          // Espera un poco antes de navegar para asegurar que la actualización llegue
+          setTimeout(() => {
+            // Navegar a la lista de vehículos
+            this.router.navigate(['/vehicles']);
+          }, 1000);
         },
         error: (error) => {
           console.error('Error creating vehicle:', error);
-          let errorMsg = error.error?.message || 'Failed to create vehicle';
 
-          if (error.status === 401) {
-            errorMsg = 'Your session has expired. Please login again.';
+          // Mensaje de error más específico
+          let errorMsg = 'Failed to create vehicle';
+
+          if (error.error?.message) {
+            errorMsg = `Server error: ${error.error.message}`;
+          } else if (error.status === 0) {
+            errorMsg = 'Cannot connect to server. Please check your connection.';
+          } else if (error.status === 400) {
+            errorMsg = 'Invalid data. Please check your input.';
+          } else if (error.status === 401) {
+            errorMsg = 'Authentication failed. Please login again.';
             this.authService.logout();
+          } else if (error.status === 409) {
+            errorMsg = 'This vehicle may already exist in the database.';
+          } else if (error.message) {
+            errorMsg = error.message;
           }
 
-          this.snackBar.open(errorMsg, 'Close', { duration: 3000 });
+          this.snackBar.open(errorMsg, 'Close', { duration: 5000 });
           this.isLoading = false;
         }
       });
     }
   }
-
+  private sanitizeInput(value: any): string {
+    if (value === null || value === undefined) return '';
+    return String(value).trim();
+  }
   onCancel(): void {
     this.router.navigate(['/vehicles']);
   }
