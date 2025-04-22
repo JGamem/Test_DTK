@@ -44,11 +44,9 @@ export class VehicleListComponent implements OnInit, AfterViewInit, OnDestroy {
   displayedColumns: string[] = ['brand', 'model', 'year', 'color', 'location', 'actions'];
   dataSource = new MatTableDataSource<Vehicle>([]);
   isLoading = true;
-  paginatorReady = false;
-  sortReady = false;
   private refreshSubscription!: Subscription;
-
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  
+  @ViewChild('paginator') paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
@@ -61,61 +59,34 @@ export class VehicleListComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.dataSource = new MatTableDataSource<Vehicle>([]);
     this.loadVehicles();
-
     this.refreshSubscription = this.refreshService.refresh$.subscribe(() => {
-      console.log("Recibida señal de actualización");
+      console.log("Recibiendo señal de actualización");
       this.loadVehicles();
     });
   }
 
   ngAfterViewInit(): void {
     setTimeout(() => {
-      this.initializePaginatorAndSort();
+      this.setupPaginatorAndSort();
     }, 300);
   }
-
-  initializePaginatorAndSort(): void {
-    try {
-      if (this.paginator) {
-        console.log("Paginator encontrado, inicializando");
-        this.dataSource.paginator = this.paginator;
-        this.paginator.pageSize = 5;
-        this.paginatorReady = true;
-      } else {
-        console.warn("Paginator no disponible");
-        setTimeout(() => {
-          if (this.paginator) {
-            console.log("Paginator encontrado en segundo intento");
-            this.dataSource.paginator = this.paginator;
-            this.paginator.pageSize = 5;
-            this.paginatorReady = true;
-          } else {
-            console.error("Paginator sigue sin estar disponible");
-          }
-        }, 500);
-      }
-
-      if (this.sort) {
-        console.log("Sort encontrado, inicializando");
-        this.dataSource.sort = this.sort;
-        this.sortReady = true;
-      } else {
-        console.warn("Sort no disponible");
-        setTimeout(() => {
-          if (this.sort) {
-            console.log("Sort encontrado en segundo intento");
-            this.dataSource.sort = this.sort;
-            this.sortReady = true;
-          } else {
-            console.error("Sort sigue sin estar disponible");
-          }
-        }, 500);
-      }
-    } catch (error) {
-      console.error("Error inicializando paginador y ordenador:", error);
+  
+  setupPaginatorAndSort(): void {
+    if (this.paginator) {
+      this.dataSource.paginator = this.paginator;
+      console.log("Paginator asignado correctamente:", this.paginator);
+    } else {
+      console.warn("Paginator no disponible");
+    }
+    
+    if (this.sort) {
+      this.dataSource.sort = this.sort;
+      console.log("Sort asignado correctamente:", this.sort);
+    } else {
+      console.warn("Sort no disponible");
     }
   }
-
+  
   ngOnDestroy(): void {
     if (this.refreshSubscription) {
       this.refreshSubscription.unsubscribe();
@@ -125,38 +96,35 @@ export class VehicleListComponent implements OnInit, AfterViewInit, OnDestroy {
   loadVehicles(): void {
     this.isLoading = true;
     console.log("Cargando vehículos...");
-
+    
     this.vehicleService.getAllVehicles().subscribe({
       next: (response) => {
-        console.log("Respuesta recibida:", response);
-
+        console.log("Respuesta del servidor:", response);
+        
         if (response && response.data) {
           this.dataSource.data = response.data;
-          console.log("Datos cargados:", this.dataSource.data.length, "vehículos");
+          console.log("Vehículos cargados:", this.dataSource.data.length);
 
-          if (this.paginatorReady && this.paginator) {
-            this.dataSource.paginator = this.paginator;
-          }
-
-          if (this.sortReady && this.sort) {
-            this.dataSource.sort = this.sort;
-          }
-
-          if (!this.paginatorReady || !this.sortReady) {
-            setTimeout(() => {
-              this.initializePaginatorAndSort();
-            }, 200);
-          }
+          setTimeout(() => {
+            if (this.paginator) {
+              this.dataSource.paginator = this.paginator;
+            }
+            
+            if (this.sort) {
+              this.dataSource.sort = this.sort;
+            }
+            
+            this.isLoading = false;
+          }, 100);
         } else {
-          console.error('Format is not valid:', response);
-          this.snackBar.open('Vehicle format is not valid', 'Cerrar', { duration: 3000 });
+          console.error('Respuesta del servidor no válida:', response);
+          this.snackBar.open('Error loading vehicles', 'Cerrar', { duration: 3000 });
+          this.isLoading = false;
         }
-
-        this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading vehicles', error);
-        this.snackBar.open('Error loading vehicles', 'Close', { duration: 3000 });
+        console.error('Error al cargar los vehículos:', error);
+        this.snackBar.open('Error loading vehicles', 'Cerrar', { duration: 3000 });
         this.isLoading = false;
       }
     });
@@ -175,8 +143,8 @@ export class VehicleListComponent implements OnInit, AfterViewInit, OnDestroy {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '350px',
       data: {
-        title: 'Confirm Delete',
-        message: 'Are you sure you want to delete this vehicle?'
+        title: 'Confirmar eliminación',
+        message: '¿Estás seguro de que deseas eliminar este vehículo?'
       }
     });
 
@@ -185,12 +153,12 @@ export class VehicleListComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isLoading = true;
         this.vehicleService.deleteVehicle(id).subscribe({
           next: () => {
-            this.snackBar.open('Vehicle deleted successfully', 'Close', { duration: 3000 });
+            this.snackBar.open('Vehículo eliminado correctamente', 'Cerrar', { duration: 3000 });
             this.loadVehicles();
           },
           error: (error) => {
-            console.error('Error deleting vehicle', error);
-            this.snackBar.open('Error deleting vehicle', 'Close', { duration: 3000 });
+            console.error('Error al eliminar el vehículo:', error);
+            this.snackBar.open('Error al eliminar el vehículo', 'Cerrar', { duration: 3000 });
             this.isLoading = false;
           }
         });

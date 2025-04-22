@@ -12,10 +12,10 @@ export class VehicleService {
 
     constructor(private apiService: ApiService) { }
 
-    getAllVehicles(): Observable<{ success: boolean; data: Vehicle[] }> {
+    getAllVehicles(): Observable<{ success: boolean; data: Vehicle[]; meta?: any }> {
         const timestamp = new Date().getTime();
-        return this.apiService.get<{ success: boolean; data: Vehicle[] }>(
-            `${this.endpoint}?_=${timestamp}`
+        return this.apiService.get<{ success: boolean; data: Vehicle[]; meta?: any }>(
+            `${this.endpoint}?limit=100&_=${timestamp}`
         );
     }
 
@@ -25,7 +25,7 @@ export class VehicleService {
 
     createVehicle(vehicle: Vehicle): Observable<{ success: boolean; data: Vehicle; message: string }> {
         console.log('Service sending vehicle data:', vehicle);
-
+        
         return this.apiService.post<Vehicle, { success: boolean; data: Vehicle; message: string }>(
             this.endpoint, vehicle
         ).pipe(

@@ -106,93 +106,53 @@ export class VehicleFormComponent implements OnInit {
 
   onSubmit(): void {
     if (this.vehicleForm.invalid) {
-      // Mostrar los errores específicos para ayudar al usuario
-      Object.keys(this.vehicleForm.controls).forEach(key => {
-        const control = this.vehicleForm.get(key);
-        if (control?.invalid) {
-          console.log(`Campo ${key} inválido:`, control.errors);
-        }
-      });
-
-      this.snackBar.open('Por favor, corrija los errores en el formulario', 'Cerrar', { duration: 3000 });
       return;
     }
-
-    // Verificar autenticación nuevamente antes de enviar
-    if (!this.authService.isAuthenticated()) {
-      this.snackBar.open('Your session has expired. Please login again.', 'Login', {
-        duration: 5000
-      }).onAction().subscribe(() => {
-        this.router.navigate(['/login']);
-      });
-      return;
-    }
-
+  
     this.isLoading = true;
-
-    // Limpia y sanitiza los datos antes de enviarlos
+    
+    // Crear objeto de vehículo limpio
     const vehicleData: Vehicle = {
-      brand: this.sanitizeInput(this.vehicleForm.get('brand')?.value),
-      model: this.sanitizeInput(this.vehicleForm.get('model')?.value),
+      brand: this.vehicleForm.get('brand')?.value?.trim() || '',
+      model: this.vehicleForm.get('model')?.value?.trim() || '',
       year: Number(this.vehicleForm.get('year')?.value) || this.currentYear,
-      color: this.sanitizeInput(this.vehicleForm.get('color')?.value),
-      location: this.sanitizeInput(this.vehicleForm.get('location')?.value) || undefined
+      color: this.vehicleForm.get('color')?.value?.trim() || '',
+      location: this.vehicleForm.get('location')?.value?.trim() || undefined
     };
-
-    console.log('Submitting vehicle data:', vehicleData);
-
+  
+    console.log('Enviando datos de vehículo:', vehicleData);
+  
     if (this.isEditMode) {
-      // Código para actualizar vehículo...
     } else {
-      // Crear nuevo vehículo con manejador mejorado de errores
       this.vehicleService.createVehicle(vehicleData).subscribe({
         next: (response) => {
-          console.log('Vehicle created successfully:', response);
-          this.snackBar.open('Vehicle created successfully', 'Close', { duration: 3000 });
-
-          // Notificar que se deben actualizar los datos
+          console.log('Vehículo creado exitosamente:', response);
+          this.snackBar.open('Vehículo creado exitosamente', 'Cerrar', { duration: 3000 });
+          
           this.refreshService.triggerRefresh();
-
-          // Limpia el formulario
-          this.vehicleForm.reset();
-
-          // Espera un poco antes de navegar para asegurar que la actualización llegue
+          
           setTimeout(() => {
-            // Navegar a la lista de vehículos
             this.router.navigate(['/vehicles']);
-          }, 1000);
+          }, 500);
         },
         error: (error) => {
-          console.error('Error creating vehicle:', error);
-
-          // Mensaje de error más específico
-          let errorMsg = 'Failed to create vehicle';
-
+          console.error('Error al crear el vehículo:', error);
+          
+          let errorMsg = 'Error al crear el vehículo';
+          
           if (error.error?.message) {
-            errorMsg = `Server error: ${error.error.message}`;
+            errorMsg = `Error del servidor: ${error.error.message}`;
           } else if (error.status === 0) {
-            errorMsg = 'Cannot connect to server. Please check your connection.';
-          } else if (error.status === 400) {
-            errorMsg = 'Invalid data. Please check your input.';
-          } else if (error.status === 401) {
-            errorMsg = 'Authentication failed. Please login again.';
-            this.authService.logout();
-          } else if (error.status === 409) {
-            errorMsg = 'This vehicle may already exist in the database.';
-          } else if (error.message) {
-            errorMsg = error.message;
+            errorMsg = 'No se puede conectar al servidor. Verifique su conexión.';
           }
-
-          this.snackBar.open(errorMsg, 'Close', { duration: 5000 });
+          
+          this.snackBar.open(errorMsg, 'Cerrar', { duration: 5000 });
           this.isLoading = false;
         }
       });
     }
   }
-  private sanitizeInput(value: any): string {
-    if (value === null || value === undefined) return '';
-    return String(value).trim();
-  }
+
   onCancel(): void {
     this.router.navigate(['/vehicles']);
   }
